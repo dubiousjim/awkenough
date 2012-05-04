@@ -141,6 +141,11 @@ function choose(n,  k,   A, i, r, p) {
     k = checkpos(k, 1, "choose: second argument must be positive")
     if (!isempty(A)) {
         # A is already populated, choose k elements from A[1]..A[n], ordered by index
+        if (!n) {
+            n = 1
+            while (n in A) n++
+            n--
+        }
         p = r = ""
         for (i = 1; n > 0; i++)
             if (rand() < k/n--) {

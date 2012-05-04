@@ -136,15 +136,16 @@ min(m,n)
     These functions are trivial to inline and may be removed.
 
 
-choose(n, k=1, [A])
+choose(n, [k=1], [A])
     Choose k distinct random elements from A[1]...A[n]. Return those k elements
 separated by SUBSEP. (They will be ordered with A[i] before A[j] when i<j.)
     If no initialized value is provided for k, it defaults to 1. If no array is
 provided, k random integers from the inclusive range 1...n are returned
-instead.
+instead. If an array is provided but n is unitialized, A's "height" is used for
+n (see explanation at the start of this document).
 
 
-permute(n, k)
+permute(n, [k=n])
     Return a permutation of k randome elements from 1..n, separated by SUBSEP.
     If no initialized value is provided for k, it defaults to n.
 
