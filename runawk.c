@@ -19,9 +19,7 @@
 
 
 #ifndef AWK
-/* can set AWK to "/bin/busybox" and AWK2 to "awk" */
-// #define AWK "/usr/bin/awk"
-#define AWK "/usr/local/bin/gawk"
+#define AWK "/usr/bin/awk"
 #define AWK2 NULL
 #else
 #ifndef AWK2
@@ -29,9 +27,7 @@
 #endif
 #endif
 
-#ifndef VERSION
 #define VERSION "0.30.0"
-#endif
 
 
 static char temp_fn [PATH_MAX] = "/tmp/runawk.XXXXXX";
