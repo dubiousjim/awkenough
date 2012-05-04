@@ -23,7 +23,7 @@ AWK can also be set to /bin/busybox; in that case, the runawk binary will invoke
 Runawk
 ======
 
-This stub program makes it easy to work around a limitation in the way many Unix kernels (including Linux) handle shebang (#!) lines. They will parse the shebang line only into a maximum of two component, and will then invoke the first component with an ARGV[1] of the second component (when it's present) and an ARGV[2] of the path of the script file containing the shebang line. This works fine if you just want to begin an awk script like this:
+This stub program makes it easy to work around a limitation in the way many Unix kernels (including Linux) handle shebang (#!) lines. They will parse the shebang line only into a maximum of two components, and will then invoke the first component with an ARGV[1] of the second component (when it's present) and an ARGV[2] of the path of the script file containing the shebang line. This works fine if you just want to begin an awk script like this:
 
     file /path/foo.awk
     ------------------
@@ -153,9 +153,9 @@ You can work around this manually, by inspecting and rewriting all your ARGVs as
     ...
     ------------------
 
-* Any other short-form arguments passed to runawk (like "-x") raise an error.
+* Any other short-form options passed to runawk (like "-x") raise an error.
 
-* Any other long-form arguments are silently passed to the awk binary.
+* Any other long-form options are silently passed to the awk binary.
 
 This runawk was adapted from a more full-featured one developed by Aleksey Cheusov <vle@gmx.net>. His is available at http://runawk.sourceforge.net/. I didn't want all the features in his implementation, and I wanted to do some things differently. But you should also have a look at his version and see if it fits your needs better. By default, our runawk binary installs as /usr/bin/runawklite, so as to avoid clashing with his.
 
