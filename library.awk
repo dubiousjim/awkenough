@@ -701,7 +701,7 @@ function entab(str, siz) {
     siz = checkpos(siz, 8, "detab: second argument must be positive")
     str = detab(str, siz)
     gsub(".{" siz "}", "&\1", str)
-    gsub(" +\1", "\t", str)
+    gsub("  +\1", "\t", str)
     gsub("\1", "", str)
     return str
 }
