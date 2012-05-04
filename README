@@ -33,71 +33,71 @@ Runawk
 
 This stub program makes it easy to work around a limitation in the way many Unix kernels (including Linux) handle shebang (#!) lines. They will parse the shebang line only into a maximum of two component, and will then invoke the first component with an ARGV[1] of the second component (when it's present) and an ARGV[2] of the path of the script file containing the shebang line. This works fine if you just want to begin an awk script like this:
 
-file /path/foo.awk
-------------------
-#!/usr/bin/awk -f
-...
-------------------
+    file /path/foo.awk
+    ------------------
+    #!/usr/bin/awk -f
+    ...
+    ------------------
 
 If you try to exec /path/foo.awk [...args...], the kernel will read its shebang line and will then invoke:
 
-"/usr/bin/awk" "-f" "/path/foo.awk" [..args...]
+    "/usr/bin/awk" "-f" "/path/foo.awk" [..args...]
 
 (I included the quotes to make the parsing explicit.)
 
 In such cases, everything works great. However, what if you want to do this:
 
-file /path/bar.awk
-------------------
-#!/usr/bin/awk -vRS=; -f
-...
-------------------
+    file /path/bar.awk
+    ------------------
+    #!/usr/bin/awk -vRS=; -f
+    ...
+    ------------------
 
 If you try to exec /path/bar.awk [...args...], the kernel will read its shebang line and will then invoke:
 
-"/usr/bin/awk" "-vRS=; -f" "/path/bar.awk" [...args...]
+    "/usr/bin/awk" "-vRS=; -f" "/path/bar.awk" [...args...]
 
 Notice the parsing. The remainder of the shebang line is passed to awk as a single argument. Awk won't understand this and your script will fail.
 
 This is a general limitation of how most kernels handle shebang lines and isn't specific to awk. There are workarounds. For example, bar.awk could be rewritten as:
 
-file /path/bar.awk
-------------------
-#!/usr/bin/awk -f
-BEGIN { RS=";" }
-...
-------------------
+    file /path/bar.awk
+    ------------------
+    #!/usr/bin/awk -f
+    BEGIN { RS=";" }
+    ...
+    ------------------
 
 Or alternatively, you could give up on trying to exec bar.awk, and instead exec a shell script that bootstraps bar.awk:
 
-file /path/bar.sh
-------------------
-#!/bin/sh
-/usr/bin/awk -vRS=; -f /path/bar.awk "$@"
-------------------
+    file /path/bar.sh
+    ------------------
+    #!/bin/sh
+    /usr/bin/awk -vRS=; -f /path/bar.awk "$@"
+    ------------------
 
 If you wanted to load additional awk scripts containing utility routines, like the library.awk provided with this package, the second workaround is the only way you could do it:
 
-------------------
-#!/bin/sh
-/usr/bin/awk -f/usr/share/awkenough/library.awk -f /path/bar.awk "$@"
-------------------
+    ------------------
+    #!/bin/sh
+    /usr/bin/awk -f/usr/share/awkenough/library.awk -f /path/bar.awk "$@"
+    ------------------
 
 This is where the runawk stub program makes things easier. It is prepared for the kernel's handling of shebang lines and will automatically expand arguments it needs to before invoking awk. So you can just write your scripts like this:
 
-file /path/qux.awk
-------------------
-#!/usr/bin/runawk -f /usr/share/awkenough/library.awk -f
-...
-------------------
+    file /path/qux.awk
+    ------------------
+    #!/usr/bin/runawk -f /usr/share/awkenough/library.awk -f
+    ...
+    ------------------
 
 When you try to exec qux.awk [...args...], the kernel will invoke:
 
-"/usr/bin/runawk" "-f /usr/share/awkenough/library.awk -f" "/path/qux.awk" [...args...]
+    "/usr/bin/runawk" "-f /usr/share/awkenough/library.awk -f" "/path/qux.awk" [...args...]
 
 and runawk will in turn invoke:
 
-"/usr/bin/awk" "-f" "/usr/share/awkenough/library.awk" "-f" "/path/qux.awk" [...args...]
+    "/usr/bin/awk" "-f" "/usr/share/awkenough/library.awk" "-f" "/path/qux.awk" [...args...]
 
 so everything will work as you probably intended.
 
@@ -139,29 +139,31 @@ Runawk also accepts a further option not present in gawk. This is:
 
 and its effect is to guarantee that the awk program being invoked is handed stdin for processing, after processing any other ARGVs. In many cases awk will already do that automatically, but not all; so if you know in advance you want your script to always receive stdin, this option may be useful. For example, the following script:
 
-file /path/greet.awk
-------------------
-#!/usr/bin/runawk -f library.awk -f
-BEGIN {
-    print "Hello, " ARGV[1]
-    ARGV[1] = ""
-    print "Here is stdin:"
-}
+    file /path/greet.awk
+    ------------------
+    #!/usr/bin/runawk -f library.awk -f
+    BEGIN {
+        print "Hello, " ARGV[1]
+        ARGV[1] = ""
+        print "Here is stdin:"
+    }
 
-ARGIND == ARGC { print }
-------------------
+    FILENAME == "-" { print }
+    ------------------
 
-works great if invoked as "/path/greet.awk MyName". But if it's invoked as "/path/greet.awk MyName /path/another/file", it won't behave as expected. It won't print the lines of "/path/another/file"; the pattern ARGIND == ARGC prevents that. However, neither will it print stdin, because the presence of a file in its ARGV list means that awk will deem it unnecessary to also run the script over its stdin.
+works great if invoked as "/path/greet.awk MyName". But if it's invoked as "/path/greet.awk MyName /path/another/file", it won't behave as expected. True, it won't print the lines of "/path/another/file"; the FILENAME check prevents that. But neither will it print stdin, because the presence of a file in its ARGV list means that awk will deem it unnecessary to also run the script over its stdin.
 
 You can work around this manually, by inspecting and rewriting all your ARGVs as necessary, or by reading stdin manually using getline instead of waiting for awk to pass it to the main body of your script. But the easiest fix is to just add a --stdin to the runawk shebang line:
 
-file /path/greet.awk
-------------------
-#!/usr/bin/runawk -f library.awk --stdin -f
-...
-------------------
+    file /path/greet.awk
+    ------------------
+    #!/usr/bin/runawk -f library.awk --stdin -f
+    ...
+    ------------------
 
-Any other short-form arguments passed to runawk (like "-x") raise an error. Any other long-form arguments are silently passed to the awk binary.
+* Any other short-form arguments passed to runawk (like "-x") raise an error.
+
+* Any other long-form arguments are silently passed to the awk binary.
 
 This runawk was adapted from a more full-featured one developed by Aleksey Cheusov <vle@gmx.net>. His is available at http://runawk.sourceforge.net/. I didn't want all the features in his implementation, and I wanted to do some things differently, so I've forked his project. But you should also have a look at his version and see if it fits your needs better.
 
@@ -170,18 +172,24 @@ This runawk was adapted from a more full-featured one developed by Aleksey Cheus
 Library routines
 ================
 
-die(msg)
-    Prints msg to stderr and tries to exit with status 1.
-    Note that if you have an END block, and die was called before reaching the END block, the END block will be run before the awk program exits. If you don't want the END block to run when you're dying prematurely, insert the following line at the start of your END block:
-
-END {
-      if (EXITCODE) exit EXITCODE
-      ...
-    }
+See the file README.lib.
 
 
-assert(expr, msg)
-    if expr evaluates to false (0 or ""), then die using msg
 
+Utilities
+=========
 
+Help is usually available by running `<utility> --help`.
+
+column
+fmt
+join
+paste
+    These all work like their namesakes in Gnu coreutils or the BSD tool set.
+
+members <group>
+    Prints a list of all users who are members of <group>.
+
+uuniq
+    Eliminates duplicates like uniq does, without requiring the input to be sorted. Moreover, the output will preserve the order of all unique lines.
 
