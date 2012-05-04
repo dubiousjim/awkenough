@@ -5,7 +5,7 @@
  *   http://runawk.sourceforge.net/
  * Released under the MIT license; see LICENSE
  * Date: Fri May  4 01:04:30 EDT 2012
- */ 
+ */
 
 #include <stdlib.h>
 #include <string.h>
@@ -37,7 +37,7 @@ static int temp_fn_created = 0;
 typedef struct {
     size_t size;
     size_t allocated;
-    const char **contents;
+    char **contents;
 } array_t;
 
 
@@ -48,13 +48,13 @@ static struct {
 } shebang;
 
 
-void array_init (array_t * array) {
+static void array_init (array_t * array) {
     array->size      = 0;
     array->allocated = 0;
     array->contents  = NULL;
 }
 
-void array_push (array_t * array, const char *item) {
+static void array_push (array_t * array, char *item) {
     if (array->allocated == array->size) {
         array->allocated = array->allocated * 4 / 3 + 100;
         array->contents = realloc (array->contents,
@@ -63,16 +63,16 @@ void array_push (array_t * array, const char *item) {
     array->contents [array->size++] = item;
 }
 
-void array_pushdup (array_t * array, const char *item) {
-    char *dup = (item ? strdup (item) : NULL);
-    array_push (array, dup);
+static void array_pushdup (array_t * array, const char *item) {
+    char *d = (item ? strdup (item) : NULL);
+    array_push (array, d);
 }
 
-void array_free (array_t * array) {
+static void array_free (array_t * array) {
     size_t i;
     for (i=0; i < array->size; ++i) {
         if (array->contents [i]) {
-            free ((void *) array->contents [i]);
+            free (array->contents [i]);
             array->contents [i] = NULL;
         }
     }
@@ -189,9 +189,9 @@ static void set_sig_handler (void) {
     }
 }
 
-static void add_file (const char *dir, const char *name, int execing) {
+static void add_file (const char *dir, const char *name, int is_execing) {
     /* add to queue */
-    array_pushdup (&new_argv, execing ? "--exec" : "-f");
+    array_pushdup (&new_argv, is_execing ? "--exec" : "-f");
     array_pushdup (&new_argv, name);
     files = 1;
 }
