@@ -1,0 +1,35 @@
+#!/usr/bin/awk -f
+
+BEGIN {
+    FS=":"
+    while ((getline < "/etc/group") > 0) {
+        secondary_users[$1]=$4
+        grp_names[$3]=$1
+        grp_numbers[$1]=$3
+    }
+    close("/etc/group")
+    while ((getline < "/etc/passwd") > 0) {
+        primaries[$1]=$4
+    }
+    close("/etc/passwd")
+    for(i=1; i<ARGC; i++) {
+        gid = ARGV[i]
+        gid = gid in grp_names ? grp_names[gid] : gid
+        if (gid in grp_numbers) {
+            n = grp_numbers[gid]
+            users = ""
+            for (uid in primaries)
+                if (primaries[uid] == n)
+                    users = users "," uid
+            if (secondary_users[gid])
+                users = users "," secondary_users[gid]
+            users = substr(users, 2)
+            gsub(/,/, " ", users)
+            printf "%s: %s\n", gid, users
+        } else {
+            printf "%s: group not found\n", gid > "/dev/stderr"
+            res = 1
+        }
+    }
+    exit res
+}

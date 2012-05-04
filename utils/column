@@ -1,0 +1,122 @@
+#!/home/local/bin/runawk -f /home/jim/dev/shell/library.awk
+
+# Usage:   column [-s sep] [-c width] [files...]
+#          align text into columns
+# Author:  Jim Pryor <dubiousjim@gmail.com>
+# Version: 1
+#
+# Options:
+#     -s sep  separator to use instead of whitespace
+#   -c width  screen columns (currently ignored)
+#  --version  show version number and exit
+#     --help  show this message and exit
+#
+# This script is in the public domain, free from copyrights or restrictions.
+
+
+# based on http://awk.freeshell.org/Columnate
+# like Gnu's column -t, without non-t or -x option to fill rows first
+
+# without -t or -x, printf '1\n2\n3...' | column ~~>
+#    1   4   ...
+#    2   5
+#    3   6
+
+# without -t but with -x, printf '1\n2\n3...' | column ~~>
+#    1   2   3
+#    4   5   6
+#    ...
+
+
+
+BEGIN {
+    usage("column", 1, "align text into columns", "[-s sep] [-c width] [files...]", "   -s sep  separator to use instead of whitespace\n -c width  screen columns (currently ignored)", "", "ts:c:", options)
+    FS = ("s" in options) ? options["s"] : FS
+    columns = ("c" in options) ? options["c"] : ENVIRON["COLUMNS"]
+    # TODO options["c"] ignored, no line-wrapping yet
+    # TODO options["t"] ignored, this behavior is the default
+}
+
+
+{
+    line[NR] = $0    # saves the line
+    for (f=1; f<=NF; f++) {
+        len = length($f)
+        if (len>maxlen[f])
+            maxlen[f] = len    # array of maximum field lengths
+    }
+}
+
+END {
+    for(nr=1; nr<=NR; nr++) {
+        nf = split(line[nr], fields)
+        for (f=1; f<nf; f++)
+            # BusyBox doesn't handle %*s
+            # printf "%-*s", maxlen[f]+2, fields[f]
+            printf "%-" (maxlen[f]+2) "s", fields[f]
+        print fields[f]     # don't need to pad the last field
+    }
+}
+
+
+# Align columns
+# Task
+# Align columns
+# You are encouraged to solve this task according to the task description, using any language you may know.
+
+# Given a text file of many lines, where fields within a line are delineated by a single 'dollar' character, write a program that aligns each column of fields by ensuring that words in each column are separated by at least one space. Further, allow for each word in a column to be either left justified, right justified, or center justified within its column.
+
+
+# Use the following text to test your programs:
+
+# Given$a$text$file$of$many$lines,$where$fields$within$a$line$
+# are$delineated$by$a$single$'dollar'$character,$write$a$program
+# that$aligns$each$column$of$fields$by$ensuring$that$words$in$each$
+# column$are$separated$by$at$least$one$space.
+# Further,$allow$for$each$word$in$a$column$to$be$either$left$
+# justified,$right$justified,$or$center$justified$within$its$column.
+
+# Note that:
+
+#     The example input texts lines may, or may not, have trailing dollar characters.
+#     All columns should share the same alignment.
+#     Consecutive space characters produced adjacent to the end of lines are insignificant for the purposes of the task.
+#     Output text will be viewed in a mono-spaced font.
+#     The minimum space between columns should be computed from the text and not hard-coded. 
+
+# AWK
+
+# BEGIN {
+#   FS="$"
+#   lcounter = 1
+#   maxfield = 0
+#   # justistification; pick up one
+#   #justify = "left"
+#   justify = "center"
+#   #justify = "right"
+# }
+# {
+#   if ( NF > maxfield ) maxfield = NF;
+#   for(i=1; i <= NF; i++) {
+#     line[lcounter,i] = $i
+#     if ( longest[i] == "" ) longest[i] = 0;
+#     if ( length($i) > longest[i] ) longest[i] = length($i);
+#   }
+#   lcounter++
+# }
+# END {
+#   just = (justify == "left") ? "-" : ""
+#   for(i=1; i <= NR; i++) {
+#     for(j=1; j <= maxfield; j++) {
+#       if ( justify != "center" ) {
+#         template = "%" just longest[j] "s "
+#       } else {
+#         v = int((longest[j] - length(line[i,j]))/2)
+#         rt = "%" v+1 "s%%-%ds"
+#         template = sprintf(rt, "", longest[j] - v)
+#       }
+#       printf(template, line[i,j])
+#     }
+#     print ""
+#   }
+# }

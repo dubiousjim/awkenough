@@ -1,0 +1,183 @@
+#!/home/local/bin/runawk -f /home/jim/dev/shell/library.awk
+
+# based on sample code at http://cm.bell-labs.com/cm/cs/who/bwk/awkcode.txt
+
+
+# Usage:   fmt [-p] [-s] [-l num] [-t num] [-w width | -width | goal [maximum]] [file ...]
+#          rewrap text
+# Author:  Jim Pryor <dubiousjim@gmail.com>
+# Version: 1
+# 
+# Options:
+#  -p     allow indented paragraphs
+#  -s     collapse whitespace inside lines
+#  -l <n> turn each <n> spaces at start of line into a tab  <== if 0, spaces are preserved
+#  -t <n> have tabs every <n> columns (default 8)
+#  -w <n> set maximum width to <n>
+#  goal   set target width to goal (default 65)
+#         maximum defaults to goal + 10
+#
+# fmt collapses successive lines into a wrapped paragraph; to
+# just force line-wrapping, use `fold` instead. Lines are joined or
+# split only at white space.
+#
+# <== like FreeBSD's `fmt -n -d "" ...`; that is, we don't treat /^\./ lines special, and never double-space.
+# 
+# This script is in the public domain, free from copyrights or restrictions.
+
+
+function getwidth(n,   m) {
+    m = options[n] +0
+    if (m)
+        m = n * (10 ^ length(m)) + m
+    else
+        m = n
+    if (goal == "")
+        goal = m
+    else
+        die("multiple width specifiers")
+}
+
+BEGIN {
+    usage("fmt", 1, "rewrap text", "[-p] [-s] [-l num] [-t num] [-w width | -width | goal [maximum]] [file ...]",
+          "-p     allow indented paragraphs\n-s     collapse whitespace inside lines\n-l <n> turn each <n> spaces at start of line into a tab\n-t <n> have tabs every <n> columns (default 8)\n-w <n> set maximum width to <n>\ngoal   set target width to goal (default 65)\n       maximum defaults to goal + 10",
+          "fmt collapses successive lines into a wrapped paragraph; to\njust force line-wrapping, use `fold` instead. Lines are joined or\nsplit only at white space.",
+          "psl:t:w:1?2?3?4?5?6?7?8?9?", options, 0)
+    if (1 in options) getwidth(1)
+    if (2 in options) getwidth(2)
+    if (3 in options) getwidth(3)
+    if (4 in options) getwidth(4)
+    if (5 in options) getwidth(5)
+    if (6 in options) getwidth(6)
+    if (7 in options) getwidth(7)
+    if (8 in options) getwidth(8)
+    if (9 in options) getwidth(9)
+    if ("w" in options)
+        if (goal == "")
+            goal = options["w"] +0
+        else
+            die("multiple width specifiers")
+    if (goal == "") {
+        if (ARGC > 1 && ARGV[1] ~ /^[0-9]+$/) {
+            goal = ARGV[1] +0
+            if (ARGC > 2 && ARGV[2] ~ /^[0-9]+$/) {
+                maximum = ARGV[2] + 0
+                for (i=3; i<ARGC; i++)
+                    ARGV[i-2] = ARGV[i]
+                ARGC -= 2
+            } else {
+                maximum = goal + 10
+                for (i=2; i<ARGC; i++)
+                    ARGV[i-1] = ARGV[i]
+                ARGC -= 1
+            }
+        } else die("no width specifier")
+    } else maximum = goal
+    # TODO handle -l#
+    # TODO handle -t#, currently we don't even handle the default -t8, but just treat each tab as one space
+    inline = 0
+    print_indent = indent = 0
+    if (!("s" in options))
+        FS = "[ \t]"
+}
+
+
+/^$/ { printline(); print ""; inline = 0; print_indent = indent = 0; next }
+
+{
+    this_indent = match($0, /[^ \t]/) - 1  # TODO what if line is entirely blank?
+    if (inline++) {
+        if (this_indent > indent || (this_indent < indent && !(inline == 2 && "p" in options))) {
+            # change in indentation starts new paragraph
+            printline(); inline = 0
+        }
+    } else {
+        # first line of paragraph
+        print_indent = this_indent
+    }
+    indent = this_indent
+    seen_word = 0
+    for (i = 1; i <= NF; i++) {
+        if ($i == "" && !seen_word)
+            continue
+        seen_word = 1
+        addword($i)
+    }
+}
+
+END  {
+    if (EXITCODE) exit EXITCODE
+    printline()
+}
+
+function addword(w) {
+    # TODO we don't handle maximum
+    if (length(line) + length(w) + print_indent > goal) {
+        printline()
+    }
+    line = line " " w
+}
+
+function printline() {
+    if (length(line) > 0) {
+        if (!print_indent)
+            print substr(line, 2) # remove leading space
+        else
+            printf "%" (print_indent - 1) "s%s\n", "", line
+        print_indent = indent
+        line = ""
+    }
+}
+
+
+
+
+
+# AWK
+
+# Basic word wrap.
+
+# function wordwrap_paragraph(p)
+# {
+#   if ( length(p) < 1 ) return
+#  
+#   split(p, words)
+#   spaceLeft = lineWidth
+#   line = words[1]
+#   delete words[1]
+#  
+#   for (i = 1; i <= length(words); i++) {
+#     word = words[i]
+#     if ( (length(word) + 1) > spaceLeft ) {
+#       print line
+#       line = word
+#       spaceLeft = lineWidth -  length(word)
+#     } else {
+#       spaceLeft -= length(word) + 1
+#       line = line " " word
+#     }
+#   }
+#   print line
+# }
+#  
+# BEGIN {
+#   lineWidth = width
+#   par = ""
+# }
+#  
+# /^[ \t]*$/ {
+#   wordwrap_paragraph(par)
+#   par = ""
+# }
+#  
+# !/^[ \t]*$/ {
+#   par = par " " $0
+# }
+#  
+# END {
+#   wordwrap_paragraph(par)
+# }
+
+# To test it,
+
+# awk -f wordwrap.awk -v width=80 < text.txt

@@ -1,0 +1,41 @@
+#!/home/local/bin/runawk -f /home/jim/dev/shell/library.awk
+
+# Usage:   uuniq [-i] [-r] [files...]
+#          order-preserving uniq
+# Author:  Jim Pryor <dubiousjim@gmail.com>
+# Version: 2
+
+# Options:
+#  -i  case-insensitive matching
+#  -r  keep last duplicate instead of first
+#  --version  show version number and exit
+#     --help  show this message and exit
+
+# This script is in the public domain, free from copyrights or restrictions.
+
+
+# cat -n "$@" | sort -k2 $REVERSE | uniq -f1 $CASE | sort -k1n | cut -c8-
+
+BEGIN {
+    usage("uuniq", 2, "order-preserving uniq", "[-i] [-r] [files...]", "-i  case-insensitive matching\n-r  keep last duplicate instead of first", "", "ir", options)
+    i = 0
+    insensitive = options["i"]
+    reverse = options["r"]
+}
+
+{
+    z = insensitive ? tolower($0) : $0
+    if (a[z])
+        if (reverse)
+            delete b[a[z]]
+        else
+            next
+    b[++i] = $0
+    a[z] = i
+}
+
+END {
+    for (j=1; j<=i; j++)
+        if (!reverse || j in b)
+            print b[j]
+}

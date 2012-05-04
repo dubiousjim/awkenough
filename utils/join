@@ -1,0 +1,219 @@
+#!/home/local/bin/runawk -f /home/jim/dev/shell/library.awk
+
+# based on sample code at http://cm.bell-labs.com/cm/cs/who/bwk/awkcode.txt
+
+
+# Usage:   join [-1 field#] [-2 field#] [-a file# | -v file#] \
+#               [-t char] [-e string] [-o spec] file1 file2
+#          join sorted files on common field
+# Author:  Jim Pryor <dubiousjim@gmail.com>
+# Version: 1
+# 
+# Options:
+#              -1 field#  join on field# of file1 (defaults to field1)
+#              -2 field#  join on field# of file2 (defaults to field1)
+#               -a file#  also print any unjoinable lines from file#
+#               -v file#  only print unjoinable lines from file#  <== incompatible with -a and -o
+#                -t char  use instead of whitespace to delimit input and output
+#              -e string  replace empty fields with string        <== only effective when -o
+#  -o {0 | file#.field#}  output specifier (0 means the join field)
+
+# There is one output line for each pair of lines in file1 and file2 with the same
+# join field. Default output is the join field, the remaining fields from file1,
+# then the remaining fields from file2. Files and fields are counted from 1. The
+# -o option may be repeated, or will accept a comma or space-separated list.
+
+# Default parsing ignores leading whitespace, and permits fields to be separated
+# by any span of whitespace. In this case, files should be `sort -b -k <field#>`.  <== can be sort -k1b,1
+# If a -t delimiter char is specified instead, each occurrence is significant,
+# and files should be `sort -k <field#> -t <char>`.
+
+# This script is in the public domain, free from copyrights or restrictions.
+
+
+BEGIN {
+    usage("join", 1, "join sorted files on common field", "[-1 field#] [-2 field#] [-a file# | -v file#] \\\n              [-t char] [-e string] [-o spec] file1 file2",
+          "            -1 field#  join on field# of file1 (defaults to field1)\n            -2 field#  join on field# of file2 (defaults to field1)\n             -a file#  also print any unjoinable lines from file#\n             -v file#  only print unjoinable lines from file#\n              -t char  use instead of whitespace to delimit input and output\n            -e string  replace empty fields with string\n-o {0 | file#.field#}  output specifier (0 means the join field)",
+          "There is one output line for each pair of lines in file1 and file2 with the same\njoin field. Default output is the join field, the remaining fields from file1,\nthen the remaining fields from file2. Files and fields are counted from 1. The\n-o option may be repeated, or will accept a comma or space-separated list.\n\nDefault parsing ignores leading whitespace, and permits fields to be separated\nby any span of whitespace. In this case, files should be `sort -b -k <field#>`.\nIf a -t delimiter char is specified instead, each occurrence is significant,\nand files should be `sort -k <field#> -t <char>`.",
+          "a+e:o+t:v+j:1:2:", options, 2)
+    if ("t" in options)
+        if (length(options["t"]) != 1)
+            die("-t option only accepts single characters")
+        else
+            FS = OFS = options["t"]
+    if ("j" in options)
+        options[1] = options[2] = options["j"]
+    if (1 in options) {
+        if (options[1] <= 0) die("invalid join field " options[1] " for file1")
+        join1 = options[1]
+    } else join1 = 1
+    if (2 in options) {
+        if (options[2] <= 0) die("invalid join field " options[2] " for file2")
+        join2 = options[2]
+    } else join2 = 1
+    if ("o" in options) {
+        gsub(/,|[ \t\n]+/, SUBSEP, options["o"])
+        nof = split(options["o"], ofiles, SUBSEP)
+        for (i=1; i<=nof; i++)
+            if (ofiles[i] == "0") {
+                ofiles[i] = 0
+                ofields[i] = 0
+            } else {
+                if ((ofields[i] = tail(ofiles[i], "\\.")) <= 0 || (f = head(ofiles[i], "\\.")) !~ /[12]/)
+                    die("invalid output specifier: " ofiles[i])
+                ofiles[i] = f
+            }
+    }
+    if ("a" in options) {
+        asplit(options["a"], aux, SUBSEP, SUBSEP)
+        for (i in aux)
+            if (i !~ /[12]/)
+               die("invalid option -a " i)
+        a = ((1 in aux) ? "1" : "") ((2 in aux) ? "2" : "")
+    }
+    if ("v" in options) {
+        if ("a" in options)
+            die("options -v and -a incompatible")
+        else if ("o" in options)
+            die("options -v and -o incompatible")
+        asplit(options["v"], aux, SUBSEP, SUBSEP)
+        for (i in aux)
+            if (i !~ /[12]/)
+               die("invalid option -v " i)
+        if (1 in aux) {
+            v = 1
+            a = "1" a
+        }
+        if (2 in aux) {
+            v = 1
+            a = a "2"
+        }
+    }
+    e = options["e"]
+
+    file2 = ARGV[2]
+    ARGV[2] = ""  # read file1 implicitly, file2 explicitly
+    eofstat = 1   # end of file status for file2
+    if ((ng = getgroup()) <= 0) {
+        # file2 is empty
+        if (a !~ /1/) exit      
+        file2 = ""
+    }
+    # vars: ofiles[], ofields[], nof, join1, join2, file2, a, v, e, eofstat, ng, gp[],    aux[], i, j, f, g, s, ofs, nf
+}
+
+function outputfields(g, which) {
+    if (which ~ /2/) {
+        nf = split(g, aux, FS)
+        aux[0] = aux[join2]
+    }
+    if ("o" in options) {
+        ofs = ""
+        for (j=1; j<=nof; j++) {
+            if (which ~ /1/ && ofiles[j] == 0)
+                printf "%s%s", ofs, ($join1 == "") ? e : $join1
+            else if (ofiles[j] == 1)
+                printf "%s%s", ofs, (which !~ /1/ || $ofields[j] == "") ? e : $ofields[j]
+            else
+                printf "%s%s", ofs, (which !~ /2/ || aux[ofields[j]] == "") ? e : aux[ofields[j]]
+            ofs = OFS
+        }
+    } else if (which ~ /2/) {
+        printf "%s", aux[0]
+        for (j=1; j<=nf; j++)
+            if (j!=join2)
+                printf "%s%s", OFS, aux[j]
+    } else { # which ~ /1/
+        printf "%s", $join1
+        for (j=1; j<=NF; j++)
+            if (j!=join1)
+                printf "%s%s", OFS, $j
+    }
+    print ""
+}
+
+!file2 {
+    # will only get here if -v1 or -a1
+    outputfields("", "1")
+}
+
+{   
+    f = head($0, FS, join1, e)
+    while (f > (g = head(gp[1], FS, join2, e))) {
+        if (!gp[0] && a ~ /2/)
+            # this group of file2 lines never joined, but -v2 or -a2
+            for (i=1; i<=ng; i++)
+                outputfields(gp[i], "2")
+        if ((ng = getgroup()) <= 0) {
+            # file2 is exhausted
+            if (a !~ /1/) exit
+            file2 = ""
+            outputfields("", "1")
+            next
+        }
+    }
+    if (f == g) {
+        gp[0]++
+        if ("o" in options)
+            for (i=1; i<=ng; i++)
+                outputfields(gp[1], "12")
+        else if (!v) {
+            s = $join1
+            for (j=1; j<=NF; j++)
+                if (j!=join1)
+                    s = sprintf("%s%s%s", s, OFS, $j)
+            for (i=1; i<=ng; i++) {
+                nf = split(gp[i], aux, FS)
+                printf "%s", s
+                for (j=1; j<=nf; j++)
+                    if (j!=join2)
+                        printf "%s%s", OFS, aux[j]
+                print ""
+            }
+        }
+    } else if (a ~ /1/) {
+        outputfields("", "1")
+    }
+}
+
+END {
+    if (EXITCODE) exit EXITCODE
+    if (file2 && a ~ /2/) {
+        if(!gp[0])
+            for (i=1; i<=ng; i++)
+                outputfields(gp[i], "2")
+        if (ungot) {        # print lookahead line
+            outputfields(ungotline, "2")
+        }
+        while ((getline s < file2) > 0)
+            outputfields(s, "2")
+    }
+}
+
+function getgroup(   f) {   # get matching join group into gp[1..ng]
+    gp[0] = 0
+    if (getone(gp, 1) <= 0) # end of file
+        return 0
+    f = head(gp[1], FS, join2, e)
+    for (ng = 2; getone(gp, ng) > 0; ng++) {
+        if (f != head(gp[ng], FS, join2, e)) {
+            unget(gp[ng])   # went too far
+            return ng-1
+        }
+    }
+    return ng-1
+}
+
+function unget(s)  { ungotline = s; ungot = 1 }
+
+function getone(gp, n) {    # get next line into gp[n]
+    if (eofstat <= 0)       # eof or error
+        return 0
+    if (ungot) {            # return lookahead line if it exists
+        gp[n] = ungotline
+        ungot = 0
+        return 1
+    }
+    return eofstat = (getline gp[n] < file2)
+}
+
