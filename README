@@ -11,21 +11,13 @@ This package includes:
 Installation
 ============
 
-PREFIX=/usr
-cc -Wall -o runawk runawk.c
-install -D -m644 runawk $PREFIX/bin/runawk
-install -D -m644 library.awk $PREFIX/share/awkenough/library.awk
-install -d -m755 $PREFIX/share/awkenough/utils
-for f in utils/*; do
-  sed "1s@#!/[a-z/]+/runawk -f /[a-z/]+/library.awk@#!${PREFIX}/bin/runawk -f ${PREFIX}/share/awkenough/library.awk@" $f > $f.new
-  install -D -m644 $f.new $PREFIX/share/awkenough/$f
-  [ ! -e $PREFIX/bin/${f#utils/} ] && \
-    ln -s $PREFIX/share/awkenough/$f $PREFIX/bin/${f#utils/}
-done
+1. gmake AWK=/usr/bin/awk
+2. sudo gmake PREFIX=/usr DESTDIR=/ install
 
-By default, runawk will invoke whatever binary is present or linked from /usr/bin/awk. You can also configure it differently; for example, this will build a runawk that always invokes BusyBox awk, even if another awk is linked from /usr/bin/awk:
+The displayed values for the make variables are the defaults, and can be omitted if you're happy with those values.
 
-cc -Wall -o runawk -D'AWK="/bin/busybox"' -D'AWK2="awk"' runawk.c
+AWK can also be set to /bin/busybox; in that case, the runawk binary will invoke busybox with an "awk" argument. This permits building runawk so that it always invokes BusyBox awk, even if another awk is linked from /usr/bin/awk.
+
 
 
 Runawk
@@ -128,7 +120,7 @@ but can't be invoked like this:
 
 That is, the -f option can't be mixed with providing an awk script directly on the command line, rather than in a separate file. Gawk and runawk's -e option provide a way to do this:
 
-    awk -f library.awk -e '...awk script...' argv1 ...
+    runawk -f library.awk -e '...awk script...' argv1 ...
 
 
 Runawk also knows how to handle gawk's --exec option. See the source for details.
