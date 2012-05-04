@@ -141,8 +141,8 @@ choose(n, [k=1], [A])
 separated by SUBSEP. (They will be ordered with A[i] before A[j] when i<j.)
     If no initialized value is provided for k, it defaults to 1. If no array is
 provided, k random integers from the inclusive range 1...n are returned
-instead. If an array is provided but n is unitialized, A's "height" is used for
-n (see explanation at the start of this document).
+instead. If an array is provided but n is uninitialized, A's "height" is used
+for n (see explanation at the start of this document).
 
 
 permute(n, [k=n])
@@ -151,7 +151,7 @@ permute(n, [k=n])
 
 
 shuffle(A, [n])
-    Shuffles the elements at A[1]...A[n].
+    Shuffles the elements at A[1]...A[n] in place.
     If no initialized value is provided for n, it defaults to A's "height" (see
 explanation at the start of this document).
 
@@ -176,7 +176,7 @@ entire text; so stability is not especially useful.
 
 qsort(A, 1, n)
     Sort elements A[1]...A[n] in place using quicksort. For efficiency, the
-values 1 and n must be explicityl supplied.
+values 1 and n must be explicitly supplied.
     Quicksort averages O(n log n), but has O(n^2) worst-case. Here we choose
 pivots randomly to avoid hitting worst-case behavior on the common case of
 already-sorted arrays.
@@ -189,8 +189,8 @@ hsort(A, [n])
     If no initialized value is provided for n, it defaults to A's "height" (see
 explanation at the start of this document).
     Heapsort has average and worst-case O(n log n). It's thought to be slower
-than quicksort in average cases. This algorithm relies essentially on random
-access, so it has poorer cache performance than some others.
+than quicksort in average cases. Heapsort relies essentially on random
+access, so it has poorer cache performance than some other algorithms.
     Heapsort is an unstable sorting algorithm; though see the comments on sort
 about the limited scope here for stability to be useful.
 
@@ -209,19 +209,19 @@ the input separators (including leading or trailing space), use gsplit.
 
 insert(value, [start], [A])
     Insert value as the new element A[start] in array A, pushing any existing
-elements between A[start] and A[A's height] upwards.
+elements between A[start] and A[A's "height"] upwards.
     If no array is provided, value is instead inserted at field $start.
     If no initialized value is provided for start, it defaults to (A's
-height)+1 (or to NF+1, when no array is provided).
+"height")+1 (or to NF+1, when no array is provided).
 
 
 extend(V, [start], [A])
     Like insert, but instead of inserting a single value it inserts all the
-values between V[1]...V[V's height].
+values between V[1]...V[V's "height"].
 
 
 reverse(A)
-    Reverses the elements A[1]...A[A's height] in place.
+    Reverses the elements A[1]...A[A's "height"] in place.
     If no array is provided, the fields $1...$NF are reversed instead.
 
 
@@ -230,24 +230,23 @@ concat([start=1], [len], [sep=OFS], [A])
     If no array is provided, instead provide the concatenation of
 $start...$(start+len-1), separated by sep.
     If no initialized value is provided for start or len, they default to 1 and
-A's height (or to 1 and NF, when no array is provided). If no value is provided
-for sep, it defaults to OFS.
+A's "height" (or to 1 and NF, when no array is provided). If no value is
+provided for sep, it defaults to OFS.
 
 
 has_value(A, value)
-    Returns true if A[k] == value for any k.
+    Returns true if A[k] == value for any k already in A.
 
-includes(A, B, [onlykeys=0])
-    Returns true if every (key,value) member of B is also an element of A,
-using the same key. If the optional argument onlykeys is true, then only the
-keys of B and A are inspected for this comparison.
+includes(A1, A2, [onlykeys=0])
+    Returns true if for every k in A2, k is also in A1 and A1[k] == A2[k]. If
+the optional argument onlykeys is true, then the last equality is ignored.
 
 
 union(A1, A2, [conflicts=1])
     Mutates A1 to contain the union of A1 and A2. The conflicts argument
 specifies how to handle cases where k is in A1 and A2 but A1[k] != A2[k]. If
 conflicts == 0, neither A1[k] nor A2[k] is preserved in the result array. If
-conflicts == 1 (the default), then A1[k] is favored. If conflicts==2, then
+conflicts == 1 (the default), then A1[k] is used. If conflicts==2, then
 A2[k] is.
 
 
@@ -255,7 +254,7 @@ intersect(A1, A2, [conflicts=1])
     Mutates A1 to the intersection of A1 and A2. The conflicts argument
 specifies how to handle cases where k is in A1 and A2 but A1[k] != A2[k]. If
 conflicts == 0, neither A1[k] nor A2[k] is preserved in the result array. If
-conflicts == 1 (the default), then A1[k] is favored. If conflicts==2, then
+conflicts == 1 (the default), then A1[k] is used. If conflicts==2, then
 A2[k] is.
 
 
@@ -270,8 +269,10 @@ String utilities
 ----------------
 
 quote(str)
-    Returns a version of str quoted for use by a shell. Example: if
-(system("test -e "..quote(filename)) == 0) { print filename " exists" }
+    Returns a version of str quoted for use by a shell. Example:
+        if (system("test -e "..quote(filename)) == 0) {
+            print filename " exists"
+        }
 
 
 delete_quoted(str, [q="\""], [repl=""])
@@ -285,15 +286,15 @@ rep(str, n, [sep=""])
 
 
 trim(str)
-    Removes leading and trailing space from str; returns the result.
+    Returns a copy of str with leading and trailing space removed.
 
 
 trimleft(str)
-    Removes leading space from str; returns the result.
+    Returns a copy of str with leading space removed.
 
 
 trimright(str)
-    Removes trailing space from str; returns the result.
+    Returns a copy of str with trailing space removed.
 
 
 has_prefix(str, pre)
@@ -324,42 +325,58 @@ below, it's evaluated as the boolean expression "$0 ~ /re/". Use "re" instead.
 
 asplit(str, A, [" "], ["="])
     Deletes any existing content in A and fills it with the key=value pairs
-specified in str. For example, asplit("key1 key2=value2 key3=value3") will
-result in an array where A["key1"]="", A["key2"]="value2", A["key3"]="value3".
+specified in str. For example:
+        asplit("key1 key2=value2 key3=value3")
+will result in an array where
+        A["key1"]=""
+        A["key2"]="value2"
+        A["key3"]="value3"
 Optionally permits substituting different parsing characters than " " and "=".
+
 
 bmatch(str, opener, closer)
     Like Lua's string.find("%b()"), with opener="(" and closer=")". Finds text
 inside (and including) balanced pairs of opener and closer. Sets RSTART and
 RLENGTH.
 
+
 tail(str, [re=SUBSEP], [nth=1], [none=""])
-    If str="abc<SUBSEP>def<SUBSEP>ghi", then tail(str,SUBSEP,1) returns
-"def<SUBSEP>ghi" and tail(str,SUBSEP,2) returns "ghi". Asking for a tail more
-advanced than is present returns none (which defaults to ""). Sets RSTART and
-RLENGTH.
+    If str="abc<SUBSEP>def<SUBSEP>ghi", then:
+        tail(str,SUBSEP,1) returns "def<SUBSEP>ghi"
+and:
+        tail(str,SUBSEP,2) returns "ghi"
+Asking for a tail more advanced than is present returns none (which defaults to
+""). Sets RSTART and RLENGTH.
+
 
 head(str, [re=SUBSEP], [nth=1], [none=""])
-    If str="abc<SUBSEP>def<SUBSEP>ghi", then head(str,SUBSEP,1) returns "abc",
-head(str,SUBSEP,2) returns "def", and head(str,SUBSEP,3) returns "ghi". Asking
-for a head more advanced than is present returns none (which defaults to "").
-As a special case, asking for head(str, re, -1) returns the last head in str:
-in this case "abc". Sets RSTART and RLENGTH.
-    If you are going to extract many heads, it may be more efficient to use
+    If str="abc<SUBSEP>def<SUBSEP>ghi", then:
+        head(str,SUBSEP,1) returns "abc"
+        head(str,SUBSEP,2) returns "def"
+and:
+        head(str,SUBSEP,3) returns "ghi"
+Asking for a head more advanced than is present returns none (which defaults to
+""). As a special case, asking for head(str, re, -1) returns the last head in
+str: in the examples above, "ghi". Sets RSTART and RLENGTH.
+    If you are going to extract many heads, it will be more efficient to use
 split (or gsplit) on str instead, and just access the destination ITEMS array.
 
+
 matchstr(str, re, [nth=1], [none=""])
-    Whereas head returns _elements_ between text that matches re, matchstr
+    Whereas head returns elements _between_ the text that matches re, matchstr
 returns the items that _match_ re. As with head, asking for the fourth match
 when only three are present returns none (which defaults to ""). Also, as a
 special case, asking for matchstr(str, re, -1) returns the last match in str.
 Sets RSTART and RLENGTH. The simplest invocation:
         res = matchstr(str, re, 1, none)
 is equivalent to:
-        if (match(str, re)) res = substr(str, RSTART, RLENGTH); else res = none
-    If you are going to extract many matches, it may be more efficient to use
+        if (match(str, re))
+            res = substr(str, RSTART, RLENGTH)
+        else res = none
+    If you are going to extract many matches, it will be more efficient to use
 gmatch on str instead, and just access the destination MATCH array. Or use
 gsplit and access the destination SEPS array.
+
 
 nthindex(str, needle, nth)
     A generalization of index that also permits searching for the 2nd, 3rd, ...
@@ -368,6 +385,7 @@ rather than as a regex; and the return value is a position in str >= 1 when
 needle is found, or 0 when it is not found. As a special case, asking for
 nthindex(str, needle, -1) returns the position of the last occurrence. Does not
 set RSTART or RLENGTH.
+
 
 gmatch(str, re, MATCHES, STARTS)
     Fills MATCHES with all of re's non-overlapping matches in str; also fills
@@ -379,6 +397,7 @@ and returns \\0 (the whole match) as well as \\1...\\n (the matching groups),
 as well as the starts and lengths of each of these, in the destination array.
 gmatch on the other hand finds multiple matches, but only returns \\0 for each,
 and returns the matching text and its starting position in different arrays.
+
 
 gsplit(str, ITEMS, re, SEPS)
     Takes an optional SEPS array argument to collect all the "separator" text
@@ -435,17 +454,22 @@ ARGV list "-wxarg" "-ybar" "-zfizz" "-zbuzz" results in:
         OPTIONS["z"]="fizz<SUBSEP>buzz"
 The ARGV list "--doubleu" "--ex=arg" "--why" "bar" "--zee=fizz" "--zee" "buzz"
 would produce a similar result.
+    The ARGV list is mutated to remove all the parsed options and their
+arguments. (All those entries are removed from the list, not merely set to "".)
     This function has no facility for tracking that --doubleu and -w should
 have the same meaning; if the caller wants such behavior, it should check for
 both keys in the result.
 
+
 isreadable(path)
     Returns true if a readable file exists at path.
+
 
 filesize(path, [followlink])
     Returns the size of the file at path; or "" if it's a non-regular file; or
 -1 if the file doesn't exist. If followlink=1 and the file at path is a link,
 return information about the link's target rather than the link itself.
+
 
 filetype(path, [followlink])
     Returns one of the characters "fdlcbsp" to indicate the type of the
@@ -453,22 +477,28 @@ filesystem entry at path; or -1 if there is no such entry. If followlink=1 and
 the file at path is a link, return information about the link's target rather
 than the link itself.
 
+
 basename(path, suffix)
     Just like basename(1).
+
 
 dirname(path)
     Just like dirname(1). 
 
+
 getfile(path)
     Reads the file at path and returns it as a single string.
+
 
 getpipe(cmd)
     Reads the stdout of cmd and returns it as a single string.
 
+
 mktemp()
-    Returns the path of a new file in TMPDIR that should be deleted when awk
-exits, even if it does so abnormally. This doesn't yet, but should, save the
-temp file in a new private directory under TMPDIR.
+    Returns the path of a new file in TMPDIR that will be deleted when awk
+exits, even if it exits abnormally.
+    This doesn't yet, but should, save the temp file in a new private directory
+under TMPDIR.
 
 
 # vim: ft=txt:
