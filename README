@@ -185,3 +185,12 @@ members <group>
 uuniq
     Eliminates duplicates like uniq does, without requiring the input to be sorted. Moreover, the output will preserve the order of all unique lines.
 
+
+Links
+=====
+
+<http://wiki.alpinelinux.org/wiki/Awk> may also be useful to the audience of
+this package: it summarizes some gritty details about awk semantics, the
+behavior of some different awk implementations, and correlates functions
+available in awk + awkenough to those available in lua.
+
