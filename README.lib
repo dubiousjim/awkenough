@@ -1,0 +1,321 @@
+Library routines
+================
+
+    Some of these functions use the notion of an array's "height". This abbreviates the following notion: it is the largest number n >=1 such that all indices from 1...n are "in" the array. If even 1 is not "in" the array, then the array's "height" is 0.
+
+
+Errors and debugging
+--------------------
+
+die(msg)
+    Prints msg to stderr and tries to exit with status 1.
+    Note that if you have an END block, and die was called before reaching the END block, the END block will be run before the awk program exits. If you don't want the END block to run when you're dying prematurely, insert the following line at the start of your END block:
+
+END {
+      if (EXITCODE) exit EXITCODE
+      ...
+    }
+
+
+assert(expr, msg)
+    If expr evaluates to false (0 or ""), then die using msg.
+
+
+dump(A, [prefix])
+    Print out "[key]=value" lines for all keys present in A.
+
+
+idump(A, [[start], stop], [prefix])
+    Print out "[key]=value" lines for all keys between start...stop present in A.
+
+
+
+Type-checking
+-------------
+
+ismissing(u)
+    Returns true if its argument is uninitialized.
+
+
+isnull(s)
+    Returns true if its argument is the empty string "".
+    Note that isnull(s) with an unitialized argument s will return false; however isnull accepts an optional second argument, and isnull(s, 1) will return true when s is either "" or uninitialized.
+
+
+isnum(n)
+    Returns true if its argument is a number, expressed either numerically (123) or as a string ("123").
+    Awk will also treat values like "xyz" and " 1" and "2xyz" as convertible to numbers (to 0, 1, and 2, respectively); however, isnum(...) will return false for those values. (This is deliberate.)
+    Note that isnum(n) with an unitialized argument n will return false; however isnum accepts an optional second argument, and isnum(n, 1) will return true when n is either a number or uninitialized.
+ 
+
+iszero(n)
+    Returns true if its argument is 0 or "0".
+    Awk will also treat values like "xyz" and " 0" and "0xyz" as convertible to 0; however, iszero(...) will return false for those values. (This is deliberate.)
+    Note that iszero(n) with an unitialized argument n will return false; however iszero accepts an optional second argument, and iszero(n, 1) will return true when n is either 0 or "0" or uninitialized.
+
+
+isint(n)
+    Returns true if its argument is n or "n", for any positive, zero, or negative integer n.
+    Note that isint(n) with an unitialized argument n will return false; however isint accepts an optional second argument, and isint(n, 1) will return true when n is either an integer or uninitialized.
+
+
+isnat(n)
+    Returns true if its argument is n or "n", for any positive or zero integer n.
+    Note that isnat(n) with an unitialized argument n will return false; however isnat accepts an optional second argument, and isnat(n, 1) will return true when n is either a natural number or uninitialized.
+
+
+ispos(n)
+    Returns true if its argument is n or "n", for any positive integer n. (Only integers are accepted.)
+    Note that ispos(n) with an unitialized argument n will return false; however ispos accepts an optional second argument, and ispos(n, 1) will return true when n is either a positive integer or uninitialized.
+
+
+isneg(n)
+    Returns true if its argument is n or "n", for any negative integer n. (Only integers are accepted.)
+    Note that isneg(n) with an unitialized argument n will return false; however isneg accepts an optional second argument, and isneg(n, 1) will return true when n is either a negative integer or uninitialized.
+
+
+check(u, missing)
+    If u is unitialized, sets the global MISSING and returns missing; else clears MISSING and returns u.
+
+
+checknum(n, missing, msg)
+    If n is a number (according to isnum()), clears the global MISSING and returns n. Else if n is unitialized, sets the global MISSING and returns missing (which is not itself required to be a number). Else die(msg).
+
+
+checknat(n, missing, msg)
+    If n is a natural number (according to isnat()), clears the global MISSING and returns n. Else if n is unitialized, sets the global MISSING and returns missing (which is not itself required to be a natural number). Else die(msg).
+
+
+checkpos(n, missing, msg)
+    If n is a positive integer (according to ispos()), clears the global MISSING and returns n. Else if n is unitialized, sets the global MISSING and returns missing (which is not itself required to be a positive integer). Else die(msg).
+
+
+
+Numbers and randoms
+-------------------
+
+max(m,n)
+min(m,n)
+    These functions are trivial to inline and may be removed.
+
+
+choose(n, k=1, [A])
+    Choose k distinct random elements from A[1]...A[n]. Return those k elements separated by SUBSEP. (They will be ordered with A[i] before A[j] when i<j.)
+    If no initialized value is provided for k, it defaults to 1. If no array is provided, k random integers from the inclusive range 1...n are returned instead.
+
+
+permute(n, k)
+    Return a permutation of k randome elements from 1..n, separated by SUBSEP.
+    If no initialized value is provided for k, it defaults to n.
+
+
+shuffle(A, [n])
+    Shuffles the elements at A[1]...A[n].
+    If no initialized value is provided for n, it defaults to A's "height" (see explanation at the start of this document).
+
+
+
+Array utilities
+---------------
+
+isempty(A)
+    Return true if array A has no members.
+
+
+sort(A, [n])
+    Sort elements A[1]...A[n] in place.
+    If no initialized value is provided for n, it defaults to A's "height" (see explanation at the start of this document).
+    The sort performed is an "insertion sort", which is O(n^2), but is fast for small arrays. Insertion sort is also a stable sorting algorithm, but no facilities are provided here for matching array elements by anything but their entire text; so stability is not especially useful.
+
+
+qsort(A, 1, n)
+    Sort elements A[1]...A[n] in place using quicksort. For efficiency, the values 1 and n must be explicityl supplied.
+    Quicksort averages O(n log n), but has O(n^2) worst-case. Here we choose pivots randomly to avoid hitting worst-case behavior on the common case of already-sorted arrays.
+    Quicksort is an unstable sorting algorithm; though see the comments on sort about the limited scope here for stability to be useful.
+
+
+hsort(A, [n])
+    Sort elements A[1]...A[n] in place using heapsort.
+    If no initialized value is provided for n, it defaults to A's "height" (see explanation at the start of this document).
+    Heapsort has average and worst-case O(n log n). It's thought to be slower than quicksort in average cases. This algorithm relies essentially on random access, so it has poorer cache performance than some others.
+    Heapsort is an unstable sorting algorithm; though see the comments on sort about the limited scope here for stability to be useful.
+
+
+pop([start], [len], [A])
+    Pop elements A[start]...A[start+len-1] from array A, mutating that array, and return the popped elements separated by SUBSEP.
+    If no array is provided, the fields $start...$(start+len-1) are popped instead.
+    If no initialized values are provided for start or len, they default to 1 and the array's "height" (or to NF, when no array is provided).
+    Note that when fields are popped, $0 will be recomputed using OFS, and details about the input separators may be discarded. If you want to preserve the input separators (including leading or trailing space), use gsplit.       
+
+
+insert(value, [start], [A])
+    Insert value as the new element A[start] in array A, pushing any existing elements between A[start] and A[A's height] upwards.
+    If no array is provided, value is instead inserted at field $start.
+    If no initialized value is provided for start, it defaults to (A's height)+1 (or to NF+1, when no array is provided).
+
+
+extend(V, [start], [A])
+    Like insert, but instead of inserting a single value it inserts all the values between V[1]...V[V's height].
+
+
+reverse(A)
+    Reverses the elements A[1]...A[A's height] in place.
+    If no array is provided, the fields $1...$NF are reversed instead.
+
+
+concat([start=1], [len], [sep=OFS], [A])
+    Returns the elements A[start]...A[start+len-1], separated by sep.
+    If no array is provided, instead provide the concatenation of $start...$(start+len-1), separated by sep.
+    If no initialized value is provided for start or len, they default to 1 and A's height (or to 1 and NF, when no array is provided). If no value is provided for sep, it defaults to OFS.
+
+
+has_value(A, value)
+    Returns true if A[k] == value for any k.
+
+includes(A, B, [onlykeys=0])
+    Returns true if every (key,value) member of B is also an element of A, using the same key. If the optional argument onlykeys is true, then only the keys of B and A are inspected for this comparison.
+
+
+union(A1, A2, [conflicts=1])
+    Mutates A1 to contain the union of A1 and A2. The conflicts argument specifies how to handle cases where k is in A1 and A2 but A1[k] != A2[k]. If conflicts == 0, neither A1[k] nor A2[k] is preserved in the result array. If conflicts == 1 (the default), then A1[k] is favored. If conflicts==2, then A2[k] is.
+
+
+intersect(A1, A2, [conflicts=1])
+    Mutates A1 to the intersection of A1 and A2. The conflicts argument specifies how to handle cases where k is in A1 and A2 but A1[k] != A2[k]. If conflicts == 0, neither A1[k] nor A2[k] is preserved in the result array. If conflicts == 1 (the default), then A1[k] is favored. If conflicts==2, then A2[k] is.
+
+
+subtract(A1, A2, [conflicts=1])
+    Mutates A1 to the subtraction of A2 from A1. The conflicts argument specifies how to handle cases where k is in A1 and A2 but A1[k] != A2[k]. If conflicts == 0, such keys are removed from A1 anyway. If conflicts == 1 (the default), such keys are left in A1.
+
+
+String utilities
+----------------
+
+quote(str)
+    Returns a version of str quoted for use by a shell. Example: if (system("test -e "..quote(filename)) == 0) { print filename " exists" }
+
+
+delete_quoted(str, [q="\""], [repl=""])
+    Deletes all "spans like this" from str. Knows how to handle \" and \\. Optionally permits substituting a different quote character, and a different replacement string (rather than "").
+
+
+rep(str, n, [sep=""])
+    Returns the concatenation of n copies of str, optionally joined by sep.
+
+
+trim(str)
+    Removes leading and trailing space from str; returns the result.
+
+
+trimleft(str)
+    Removes leading space from str; returns the result.
+
+
+trimright(str)
+    Removes trailing space from str; returns the result.
+
+
+has_prefix(str, pre)
+    Returns true if str begins with pre.
+
+
+has_suffix(str, suf)
+    Returns true if str ends with pre.
+
+
+detab(str, [siz=8])
+    Returns str with tabs replaced by spaces. Assumes tabstops at siz characters (defaults to 8).
+
+
+entab(str, [siz=8])
+    Returns str with sequences of two or more spaces replaced by tabs, where doing so preserves layout. Assumes tabstops at siz characters (defaults to 8).
+
+
+Regex utilities
+---------------
+
+Note: /re/ literals can only be used with built-in functions like match, sub, gsub, and gensub. If /re/ is passed to a user-defined function, like the ones below, it's evaluated as the boolean expression "$0 ~ /re/". Use "re" instead.
+
+
+asplit(str, A, [" "], ["="])
+    Deletes any existing content in A and fills it with the key=value pairs specified in str. For example, asplit("key1 key2=value2 key3=value3") will result in an array where A["key1"]="", A["key2"]="value2", A["key3"]="value3". Optionally permits substituting different parsing characters than " " and "=".
+
+bmatch(str, opener, closer)
+    Like Lua's string.find("%b()"), with opener="(" and closer=")". Finds text inside (and including) balanced pairs of opener and closer. Sets RSTART and RLENGTH.
+
+tail(str, [re=SUBSEP], [nth=1], [none=""])
+    If str="abc<SUBSEP>def<SUBSEP>ghi", then tail(str,SUBSEP,1) returns "def<SUBSEP>ghi" and tail(str,SUBSEP,2) returns "ghi". Asking for a tail more advanced than is present returns none (which defaults to ""). Sets RSTART and RLENGTH.
+
+head(str, [re=SUBSEP], [nth=1], [none=""])
+    If str="abc<SUBSEP>def<SUBSEP>ghi", then head(str,SUBSEP,1) returns "abc", head(str,SUBSEP,2) returns "def", and head(str,SUBSEP,3) returns "ghi". Asking for a head more advanced than is present returns none (which defaults to ""). As a special case, asking for head(str, re, -1) returns the last head in str: in this case "abc". Sets RSTART and RLENGTH.
+    If you are going to extract many heads, it may be more efficient to use split (or gsplit) on str instead, and just access the destination ITEMS array.
+
+matchstr(str, re, [nth=1], [none=""])
+    Whereas head returns _elements_ between text that matches re, matchstr returns the items that _match_ re. As with head, asking for the fourth match when only three are present returns none (which defaults to ""). Also, as a special case, asking for matchstr(str, re, -1) returns the last match in str. Sets RSTART and RLENGTH. The simplest invocation:
+        res = matchstr(str, re, 1, none)
+is equivalent to:
+        if (match(str, re)) res = substr(str, RSTART, RLENGTH); else res = none
+    If you are going to extract many matches, it may be more efficient to use gmatch on str instead, and just access the destination MATCH array. Or use gsplit and access the destination SEPS array.
+
+nthindex(str, needle, nth)
+    A generalization of index that also permits searching for the 2nd, 3rd, ... occurrences of needle in str. As with index, needle is interpreted literally rather than as a regex; and the return value is a position in str >= 1 when needle is found, or 0 when it is not found. As a special case, asking for nthindex(str, needle, -1) returns the position of the last occurrence. Does not set RSTART or RLENGTH.
+
+gmatch(str, re, MATCHES, STARTS)
+    Fills MATCHES with all of re's non-overlapping matches in str; also fills STARTS with the corresponding indexes where these matches are located. Either or both of these arrays may be omitted.
+    This function differs from gawk's version of match, which also accepts an optional array argument. Gawk's match finds only the first match of re in str, and returns \\0 (the whole match) as well as \\1...\\n (the matching groups), as well as the starts and lengths of each of these, in the destination array. gmatch on the other hand finds multiple matches, but only returns \\0 for each, and returns the matching text and its starting position in different arrays.
+
+gsplit(str, ITEMS, re, SEPS)
+    Takes an optional SEPS array argument to collect all the "separator" text that matches re. Mostly equivalent to gawk's version of split. Unlike split, though, this function (as well as the other regex functions here) honor zero-width matches, so long as the underlying awk implementation's match does. That is, gsplit("abxd", ITEMS, "x*") will result in ITEMS[1]="a", ITEMS[2]="b", ITEMS[3]="d". I don't expect this often to be useful, but it does seem the more correct behavior.
+
+
+OS/filesystem
+-------------
+
+getopt(optstring, OPTIONS, basename, version, usage_msg)
+    Automatically handles "--help", "--version", and "--" arguments.
+    Optstring is parsed as for getopt(2), with some extensions.
+    * The presence of a single letter "w" not followed by a flag means that an option "-w" should be accepted in the ARGV list up until the presence of "--" or a non-option ARGV.
+    * If optstring contains a letter followed by a colon, as "x:", that means that the option requires an argument. Either "-xarg" or "-x" and a following "arg" in the ARGV list are accepted. If "-x" occurs multiple times in the ARGV list, only the last argument will be remembered.
+    * If optstring contains a letter followed by a question mark, as "y?", that means that the option accepts an optional argument (the default if no argument is provided is ""). If "-y" occurs multiple times in the ARGV list, only the argument of its last occurrence (which may be the default) will be remembered.
+    * If optstring contains a letter followed by a plus, as "z+", that means that the option requires an argument, and that all arguments should be remembered when the option is repeated. (The arguments are concatted into a single string separated by SUBSEP).
+    As with getopt(2), multiple short arguments may be joined together in the ARGVs: with the optstring "wx:", ARGV[1]="-wxarg" is parsed the same as ARGV[1]="-w" ARGV[2]="-x" ARGV[3]="arg".
+    Long-form options can also be enabled by passing them as keys of the OPTIONS array. If OPTIONS contains the following key/values:
+        OPTIONS["doubleu"]=""
+        OPTIONS["ex"]=":"
+        OPTIONS["why"]="?default"
+        OPTIONS["zee"]="+"
+then getopt will also accept in the ARGV list the options "--doubleu" with no argument, "--ex" with a required argument, "--why" with an optional argument ("default" is used when no argument is supplied), and "--zee" with a required argument, multiple instances of which are remembered.
+    Armed with these parsing instructions, getopt reads through the ARGV list until it reaches "--", or a non-option argument, or the end of the list. It clears the array OPTIONS and stores the actual options it finds there. So the ARGV list "-wxarg" "-ybar" "-zfizz" "-zbuzz" results in:
+        OPTIONS["w"]=1
+        OPTIONS["x"]="arg"
+        OPTIONS["y"]="bar"
+        OPTIONS["z"]="fizz<SUBSEP>buzz"
+The ARGV list "--doubleu" "--ex=arg" "--why" "bar" "--zee=fizz" "--zee" "buzz" would produce a similar result.
+    This function has no facility for tracking that --doubleu and -w should have the same meaning; if the caller wants such behavior, it should check for both keys in the result.
+
+isreadable(path)
+    Returns true if a readable file exists at path.
+
+filesize(path, [followlink])
+    Returns the size of the file at path; or "" if it's a non-regular file; or -1 if the file doesn't exist. If followlink=1 and the file at path is a link, return information about the link's target rather than the link itself.
+
+filetype(path, [followlink])
+    Returns one of the characters "fdlcbsp" to indicate the type of the filesystem entry at path; or -1 if there is no such entry. If followlink=1 and the file at path is a link, return information about the link's target rather than the link itself.
+
+basename(path, suffix)
+    Just like basename(1).
+
+dirname(path)
+    Just like dirname(1). 
+
+getfile(path)
+    Reads the file at path and returns it as a single string.
+
+getpipe(cmd)
+    Reads the stdout of cmd and returns it as a single string.
+
+mktemp()
+    Returns the path of a new file in TMPDIR that should be deleted when awk exits, even if it does so abnormally. This doesn't yet, but should, save the temp file in a new private directory under TMPDIR.
+
+
+# vim: ft=txt:
