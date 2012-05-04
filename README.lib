@@ -6,6 +6,10 @@ abbreviates the following notion: it is the largest number n >=1 such that all
 indices from 1...n are "in" the array. If even 1 is not "in" the array, then
 the array's "height" is 0.
 
+    Some of these functions are adapted from
+http://www.cs.bell-labs.com/cm/cs/who/bwk/awkcode.txt. Some others from 
+Aleksey Cheusov's Runawk package at http://runawk.sourceforge.net/.
+
 
 Errors and debugging
 --------------------
@@ -146,7 +150,7 @@ for n (see explanation at the start of this document).
 
 
 permute(n, [k=n])
-    Return a permutation of k randome elements from 1..n, separated by SUBSEP.
+    Return a permutation of k random elements from 1..n, separated by SUBSEP.
     If no initialized value is provided for k, it defaults to n.
 
 
@@ -237,6 +241,7 @@ provided for sep, it defaults to OFS.
 has_value(A, value)
     Returns true if A[k] == value for any k already in A.
 
+
 includes(A1, A2, [onlykeys=0])
     Returns true if for every k in A2, k is also in A1 and A1[k] == A2[k]. If
 the optional argument onlykeys is true, then the last equality is ignored.
@@ -246,7 +251,7 @@ union(A1, A2, [conflicts=1])
     Mutates A1 to contain the union of A1 and A2. The conflicts argument
 specifies how to handle cases where k is in A1 and A2 but A1[k] != A2[k]. If
 conflicts == 0, neither A1[k] nor A2[k] is preserved in the result array. If
-conflicts == 1 (the default), then A1[k] is used. If conflicts==2, then
+conflicts == 1 (the default), then A1[k] is used. If conflicts == 2, then
 A2[k] is.
 
 
@@ -254,7 +259,7 @@ intersect(A1, A2, [conflicts=1])
     Mutates A1 to the intersection of A1 and A2. The conflicts argument
 specifies how to handle cases where k is in A1 and A2 but A1[k] != A2[k]. If
 conflicts == 0, neither A1[k] nor A2[k] is preserved in the result array. If
-conflicts == 1 (the default), then A1[k] is used. If conflicts==2, then
+conflicts == 1 (the default), then A1[k] is used. If conflicts == 2, then
 A2[k] is.
 
 
