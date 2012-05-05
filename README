@@ -79,13 +79,13 @@ This is where the runawk stub program makes things easier. It is prepared for th
 
     file /path/qux.awk
     ------------------
-    #!/usr/bin/runawk -f /usr/share/awkenough/library.awk -f
+    #!/usr/bin/runawk -f /usr/share/awkenough/library.awk
     ...
     ------------------
 
-When you try to exec qux.awk [...args...], the kernel will invoke:
+(Note that here we leave off the terminal "-f".) When you try to exec qux.awk [...args...], the kernel will invoke:
 
-    "/usr/bin/runawk" "-f /usr/share/awkenough/library.awk -f" "/path/qux.awk" [...args...]
+    "/usr/bin/runawk" "-f /usr/share/awkenough/library.awk" "/path/qux.awk" [...args...]
 
 and runawk will in turn invoke:
 
@@ -133,7 +133,7 @@ and its effect is to guarantee that the awk program being invoked is handed stdi
 
     file /path/greet.awk
     ------------------
-    #!/usr/bin/runawk -f /usr/share/awkenough/library.awk -f
+    #!/usr/bin/runawk -f /usr/share/awkenough/library.awk
     BEGIN {
         print "Hello, " ARGV[1]
         ARGV[1] = ""
@@ -149,7 +149,7 @@ You can work around this manually, by inspecting and rewriting all your ARGVs as
 
     file /path/greet.awk
     ------------------
-    #!/usr/bin/runawk -f /usr/share/awkenough/library.awk --stdin -f
+    #!/usr/bin/runawk -f /usr/share/awkenough/library.awk --stdin
     ...
     ------------------
 
