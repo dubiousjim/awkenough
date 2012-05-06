@@ -280,10 +280,37 @@ quote(str)
         }
 
 
-delete_quoted(str, [q="\""], [repl=""])
+delete_quoted(str, [repl=""])
     Deletes all "spans like this" from str. Knows how to handle \" and \\.
-Optionally permits substituting a different quote character, and a different
-replacement string (rather than "").
+Optionally permits substituting a different replacement string (rather than "").
+
+
+json(str, T, V)
+    Parses JSON str. A successful parse will fill the T and V arrays like this:
+
+        parse of: {"one": 10, "two": [20,30,[40,[50,60]]], "three": {}}
+        return value = 10
+
+        T[1]=string  V[1]=one
+        T[2]=number  V[2]=10
+        T[3]=string  V[3]=two
+        T[4]=number  V[4]=20
+        T[5]=number  V[5]=30
+        T[6]=number  V[6]=40
+        T[7]=number  V[7]=50
+        T[8]=number  V[8]=60
+        T[9]=string  V[9]=three
+        T[10]=object V[10]=1:2,3:11,9:14
+        T[11]=array  V[11]=4,5,12
+        T[12]=array  V[12]=6,13
+        T[13]=array  V[13]=7,8
+        T[14]=object V[14]=
+
+The return value of 10 indicates that the object at T[10] and V[10] is the root.
+The caller has to split up the contents of V[10] manually, and retrieve the
+values from the specified indices in T and V.
+    An unsuccessful parse will leave T and V in an indeterminate state, and give
+a return value < 1.
 
 
 rep(str, n, [sep=""])
