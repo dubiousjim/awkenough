@@ -579,7 +579,7 @@ function delete_quoted(str, repl) {
 }
 
 
-function json(str, T, V,    c,s,n,a,A,b,B,C,U,W,i,j,k,u,v,w,root) {
+function json(str, T, V,  slack,    c,s,n,a,A,b,B,C,U,W,i,j,k,u,v,w,root) {
     # use strings, numbers, booleans as separators
     # c = "[^\"\\\\[:cntrl:]]|\\\\[\"\\\\/bfnrt]|\\u[[:xdigit:]][[:xdigit:]][[:xdigit:]][[:xdigit:]]"
     c = "[^\"\\\\\001-\037]|\\\\[\"\\\\/bfnrt]|\\\\u[[:xdigit:]A-F][[:xdigit:]A-F][[:xdigit:]A-F][[:xdigit:]A-F]"
@@ -594,10 +594,6 @@ function json(str, T, V,    c,s,n,a,A,b,B,C,U,W,i,j,k,u,v,w,root) {
     for (i=1; i<root; i++)
         str = str A[i] i
     str = str A[root]
-
-    # sanitize string
-    gsub(/[[:space:]]+/, "", str)
-    if (str !~ /^[][}{[:digit:],:]+$/) return -1
 
     # cleanup types and values
     for (i=1; i<root; i++) {
@@ -630,6 +626,23 @@ function json(str, T, V,    c,s,n,a,A,b,B,C,U,W,i,j,k,u,v,w,root) {
         } else {
             V[i] = T[i]
         }
+    }
+
+    # sanitize string
+    gsub(/[[:space:]]+/, "", str)
+    if (str !~ /^[][{}[:digit:],:]+$/) {
+        if (slack !~ /:/) return -1
+        # handle ...unquoted:...
+        a = gsplit(str, A, "[[:alpha:]_][[:alnum:]_]*:", B)
+        str = ""
+        for (i=1; i < a; i++) {
+            T[root] = "string"
+            V[root] = substr(B[i], 1, length(B[i])-1)
+            str = str A[i] root ":"
+            root++
+        }
+        str = str A[a]
+        if (str !~ /^[][{}[:digit:],:]+$/) return -10
     }
 
     # atomic value?
@@ -674,9 +687,11 @@ function json(str, T, V,    c,s,n,a,A,b,B,C,U,W,i,j,k,u,v,w,root) {
                 if (T[substr(B[j], 1, index(B[j],":")-1)] != "string")
                     return -8
             }
-        } else {
+        } else if (V[i] != "") {
             # check array contents
-            if (V[i] != "" && V[i] !~ /^[[:digit:]]+(,[[:digit:]]+)*$/)
+            if (slack ~ /,/ && V[i] ~ /,$/)
+                V[i] = substr(V[i], 1, length(V[i] -1))
+            if (V[i] !~ /^[[:digit:]]+(,[[:digit:]]+)*$/)
                 return -9
         }
     }
