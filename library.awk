@@ -582,9 +582,9 @@ function delete_quoted(str, repl) {
 function json(str, T, V,    c,s,n,a,A,b,B,C,U,W,i,j,k,u,v,w,root) {
     # use strings, numbers, booleans as separators
     # c = "[^\"\\\\[:cntrl:]]|\\\\[\"\\\\/bfnrt]|\\u[[:xdigit:]][[:xdigit:]][[:xdigit:]][[:xdigit:]]"
-    c = "[^\"\\\\\001-\037]|\\\\[\"\\\\/bfnrt]|\\u[[:xdigit:]A-F][[:xdigit:]A-F][[:xdigit:]A-F][[:xdigit:]A-F]"
+    c = "[^\"\\\\\001-\037]|\\\\[\"\\\\/bfnrt]|\\\\u[[:xdigit:]A-F][[:xdigit:]A-F][[:xdigit:]A-F][[:xdigit:]A-F]"
     s ="\"(" c ")*\""
-    n = "-?(0|[1-9][[:digit:]]*)(\\.[[:digit:]]+)?([eE][+-]?[[:digit:]]+)?"
+    n = "-?(0|[1-9][[:digit:]]*)([.][[:digit:]]+)?([eE][+-]?[[:digit:]]+)?"
 
     root = gsplit(str, A, s "|" n "|true|false|null", T)
     assert(root > 0, "unexpected")
