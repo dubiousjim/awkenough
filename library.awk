@@ -579,7 +579,7 @@ function delete_quoted(str, repl) {
 }
 
 
-function json(str, T, V,  slack,    c,s,n,a,A,b,B,C,U,W,i,j,k,u,v,w,root) {
+function parse_json(str, T, V,  slack,    c,s,n,a,A,b,B,C,U,W,i,j,k,u,v,w,root) {
     # use strings, numbers, booleans as separators
     # c = "[^\"\\\\[:cntrl:]]|\\\\[\"\\\\/bfnrt]|\\u[[:xdigit:]][[:xdigit:]][[:xdigit:]][[:xdigit:]]"
     c = "[^\"\\\\\001-\037]|\\\\[\"\\\\/bfnrt]|\\\\u[[:xdigit:]A-F][[:xdigit:]A-F][[:xdigit:]A-F][[:xdigit:]A-F]"
@@ -696,6 +696,69 @@ function json(str, T, V,  slack,    c,s,n,a,A,b,B,C,U,W,i,j,k,u,v,w,root) {
         }
     }
     return root
+}
+
+
+function query_json(str, X,  root, slack,   T, V, A, B, C, i, j, k) {
+    k = parse_json(str, T, V, slack)
+    if (k < 1) return k
+    split(root, C, ".")
+    j = 1
+    while (j in C) {
+        if (T[k] == "array")
+            split(V[k], A, ",")
+        else {
+            split("", A)
+            asplit(V[k], B, ":", ",")
+            for (i in B)
+                A[V[i]] = B[i]
+        }
+        if (C[j] in A) {
+            k = A[C[j]]
+            j++
+        } else return -11 # can't find requested root
+    }
+    # split("", B)
+    # split("", C)
+    B[k] = ""
+    C[k] = 0
+    C[0] = k
+    do {
+        C[0] = C[k]
+        delete C[k]
+        j = T[k]
+        if (j == "array") {
+            j = split(V[k], A, ",")
+            k = B[k] ? B[k] SUBSEP : ""
+            X[k 0] = j
+            for (i=1; i<=j; i++) {
+               # push A[i] to C, (B[k],i) to B 
+                C[A[i]] = C[0]
+                B[A[i]] = k i
+                C[0] = A[i]
+            }
+        } else if (j == "object") {
+            asplit(V[k], A, ":", ",")
+            k = B[k] ? B[k] SUBSEP : ""
+            for (i in A) {
+                # push A[i] to C, (B[k],V[i]) to B 
+                C[A[i]] = C[0]
+                B[A[i]] = k V[i]
+                C[0] = A[i]
+            }
+        } else if (j == "number") {
+            X[B[k]] = V[k]
+        } else if (j == "true") {
+            X[B[k]] = 1
+        } else if (j == "false") {
+            X[B[k]] = 0
+        } else {
+            # null will satisfy ismissing()
+            X[B[k]]
+        }
+        k = C[0]
+    } while (k)
+    return 0
 }
 
 
