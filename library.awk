@@ -720,6 +720,7 @@ function query_json(str, X,  root, slack,   T, V, A, B, C, i, j, k) {
     }
     # split("", B)
     # split("", C)
+    split("", X)
     B[k] = ""
     C[k] = 0
     C[0] = k
