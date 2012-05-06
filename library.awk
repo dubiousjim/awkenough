@@ -572,10 +572,115 @@ function quote(str) {
 
 
 # delete "quoted" spans, honoring \\ and \"
-function delete_quoted(str, q,  repl) {
-    if (q == "") q = "\""
-    gsub(q "((\\\\" q ")*([^" q "\\\\]|\\\\[^" q "])*)*" q, repl, str)
+function delete_quoted(str, repl) {
+#     gsub(/"((\\")*([^"\\]|\\[^"])*)*"/, repl, str)
+    gsub(/"([^"\\]|\\.)*"/, repl, str)
     return str
+}
+
+
+function json(str, T, V,    c,s,n,a,A,b,B,C,U,W,i,j,k,u,v,w,root) {
+    # use strings, numbers, booleans as separators
+    # c = "[^\"\\\\[:cntrl:]]|\\\\[\"\\\\/bfnrt]|\\u[[:xdigit:]][[:xdigit:]][[:xdigit:]][[:xdigit:]]"
+    c = "[^\"\\\\\001-\037]|\\\\[\"\\\\/bfnrt]|\\u[[:xdigit:]][[:xdigit:]][[:xdigit:]][[:xdigit:]]"
+    s ="\"(" c ")*\""
+    n = "-?(0|[1-9][[:digit:]]*)(\\.[[:digit:]]+)?([eE][+-]?[[:digit:]]+)?"
+
+    root = gsplit(str, A, s "|" n "|true|false|null", T)
+    assert(root > 0, "unexpected")
+
+    # rejoin string using value indices
+    str = ""
+    for (i=1; i<root; i++)
+        str = str A[i] i
+    str = str A[root]
+
+    # sanitize string
+    gsub(/[[:space:]]+/, "", str)
+    if (str !~ /^[][}{[:digit:],:]+$/) return -1
+
+    # cleanup types and values
+    for (i=1; i<root; i++) {
+        if (T[i] ~ /^\"/) {
+            b = split(substr(T[i], 2, length(T[i])-2), B, /\\/)
+            if (b == 0) v = ""
+            else {
+                v = B[1]
+                k = 0
+                for (j=2; j <= b; j++) {
+                    u = B[j]
+                    if (u == "") {
+                       if (++k % 2 == 1) v = v "\\"
+                    } else {
+                        w = substr(u, 1, 1)  
+                        if (w == "b") v = v "\b" substr(u, 2)
+                        else if (w == "f") v = v "\f" substr(u, 2)
+                        else if (w == "n") v = v "\n" substr(u, 2)
+                        else if (w == "r") v = v "\r" substr(u, 2)
+                        else if (w == "t") v = v "\t" substr(u, 2)
+                        else v = v u
+                    }
+                }
+            }
+            V[i] = v
+            T[i] = "string"
+        } else if (T[i] !~ /true|false|null/) {
+            V[i] = T[i] + 0
+            T[i] = "number"
+        } else {
+            V[i] = T[i]
+        }
+    }
+
+    # atomic value?
+    a = gsplit(str, A, "[[{]", B)
+    if (A[1] != "") {
+        if (a > 1) return -2
+        else if (A[1] !~ /^[[:digit:]]+$/) return -3
+        else return A[1]+0
+    }
+
+    # parse objects and arrays
+    k = root
+    C[0] = 0
+    for (i=2; i<=a; i++) {
+        T[k] = (B[i-1] ~ /\{/) ? "object" : "array"
+        C[k] = C[0]
+        C[0] = k
+        u = gsplit(A[i], U, "[]}]", W)
+        assert(u > 0, "unexpected")
+        V[k++] = U[1]
+        if (i < a && A[i] != "" && U[u] !~ /[,:]$/)
+            return -4
+        for (j=1; j<u; j++) {
+            if (C[0] == 0 || T[C[0]] != ((W[j] == "}") ? "object" : "array")) return -5
+            v = C[0]
+            w = C[v]
+            C[0] = w
+            delete C[v]
+            if (w) V[w] = V[w] v U[j+1]
+        }
+    }
+    if (C[0] != 0) return -6
+
+    # check contents
+    for (i=root; i<k; i++) {
+        if (T[i] == "object") {
+            # check object contents
+            b = split(V[i], B, /,/) 
+            for (j=1; j <= b; j++) {
+                if (B[j] !~ /^[[:digit:]]+:[[:digit:]]+$/)
+                    return -7
+                if (T[substr(B[j], 1, index(B[j],":")-1)] != "string")
+                    return -8
+            }
+        } else {
+            # check array contents
+            if (V[i] != "" && V[i] !~ /^[[:digit:]]+(,[[:digit:]]+)*$/)
+                return -9
+        }
+    }
+    return root
 }
 
 
