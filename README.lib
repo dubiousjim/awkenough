@@ -307,8 +307,8 @@ json(str, T, V)
         T[14]=object V[14]=
 
 The return value of 10 indicates that the object at T[10] and V[10] is the root.
-The caller has to split up the contents of V[10] manually, and retrieve the
-values from the specified indices in T and V.
+The caller has to split up the contents of V[10] manually (use split or asplit),
+and retrieve the values from the specified indices in T and V.
     An unsuccessful parse will leave T and V in an indeterminate state, and give
 a return value < 1.
 
