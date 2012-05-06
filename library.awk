@@ -1201,9 +1201,21 @@ function gsplit(str, items, re,  seps,   n, i, start, stop, sep1, sep2, sepn) {
 
 ## debugging #########
 
-function dump(array,  prefix,   i) {
+function dump(array,  prefix,   i,j) {
     for (i in array) {
-        printf "%s[%s]=<%s>\n", prefix, i, array[i]
+        j = i
+        gsub(/\\/, "\\134", j)
+        gsub(/,/, "\\054", j)
+        gsub(/\t/, "\\t", j)
+        gsub(/\n/, "\\n", j)
+        gsub(/\r/, "\\r", j)
+        gsub(/\b/, "\\b", j)
+        gsub(/\f/, "\\f", j)
+#         gsub(/\a/, "\\a", j)
+#         gsub(/\v/, "\\v", j)
+        gsub(SUBSEP, ",", j)
+        gsub(/[\001-\037]/, "¿", j) # TODO: convert to octal?
+        printf "%s[%s]=<%s>\n", prefix, j, array[i]
     }
 }
 
@@ -1340,8 +1352,8 @@ function getopt(optstring, options, basename, version, usage_msg,   i, j, o, m, 
     }
     for (m in options) {
         if (options[m] ~ /^[:+?*]/) {
-            if (k = index(options[m], SUBSEP))
-                options[m] = substr(options[m], k+1)
+            if (j = index(options[m], SUBSEP))
+                options[m] = substr(options[m], j+1)
             else
                 delete options[m]
         } else if (!(options[m]))
