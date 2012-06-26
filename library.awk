@@ -753,6 +753,8 @@ function query_json(str, X,  root, slack,   T, V, A, B, C, i, j, k) {
             X[B[k]] = 1
         } else if (j == "false") {
             X[B[k]] = 0
+        } else if (j == "string") {
+            X[B[k]] = V[k]
         } else {
             # null will satisfy ismissing()
             X[B[k]]
