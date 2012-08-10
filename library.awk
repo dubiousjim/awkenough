@@ -172,7 +172,6 @@ function choose(n,  k,   A, i, r, p) {
 
 
 # random permutation of k=n integers between 1 and n
-# the distribution of this isn't great, but it does cover the whole range of permutations
 # a random deck is: split(permute(52,52), deck, SUBSEP)
 function permute(n,  k,   i, r, p) {
     k = checkpos(k, n, "permute: second argument must be positive")
