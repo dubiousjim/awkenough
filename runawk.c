@@ -191,6 +191,7 @@ static void set_sig_handler (void) {
 
 static void add_file (const char *dir, const char *name, int is_execing) {
     /* add to queue */
+    (void) dir;
     array_pushdup (&new_argv, is_execing ? "--exec" : "-f");
     array_pushdup (&new_argv, name);
     files = 1;
