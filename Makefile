@@ -1,4 +1,4 @@
-PREFIX= /usr
+PREFIX= /usr/local/
 AWK= /usr/bin/awk
 RUNAWK= runawklite
 

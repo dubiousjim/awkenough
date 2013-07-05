@@ -12,7 +12,7 @@ Installation
 ============
 
 1. gmake AWK=/usr/bin/awk
-2. sudo gmake PREFIX=/usr DESTDIR=/ install
+2. sudo gmake PREFIX=/usr/local DESTDIR=/ install
 
 The displayed values for the make variables are the defaults, and can be omitted if you're happy with those values.
 
