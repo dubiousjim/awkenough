@@ -2,7 +2,7 @@ PREFIX= /usr
 AWK= /usr/bin/awk
 RUNAWK= runawklite
 
-WARNINGS= -Wall -Wextra -std=c99 -pedantic \
+WARNINGS= -Wall -Wextra -std=gnu99 -pedantic \
       -Wpointer-arith -Wcast-qual -Wcast-align -Wstrict-overflow=4 \
       -Waggregate-return -Wbad-function-cast \
       -Wswitch-default -Wswitch-enum \
