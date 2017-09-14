@@ -501,7 +501,7 @@ function concat(start,  len, fs, A,   i, s, p, stop) {
 
 function has_value(A, value,   k) {
     for (k in A)
-        if (k[A] == value)
+        if (A[k] == value)
             return true
     return false
 }
@@ -1279,7 +1279,7 @@ function dump(array,  prefix,   i,j) {
 #         gsub(/\a/, "\\a", j)
 #         gsub(/\v/, "\\v", j)
         gsub(SUBSEP, ",", j)
-        gsub(/[\001-\037]/, "¿", j) # TODO: convert to octal?
+        gsub(/[\001-\037]/, "Â¿", j) # TODO: convert to octal?
         printf "%s[%s]=<%s>\n", prefix, j, array[i]
     }
 }
